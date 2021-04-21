@@ -34,7 +34,7 @@ namespace TCPsupremacy
                     {
                     Console.WriteLine("Lort");    
                     Byte[] data2 = Encoding.UTF8.GetBytes(Console.ReadLine());
-                        tcp.GetStream().Write(data2, 0, data2.Length);
+                        tcp3.GetStream().Write(data2, 0, data2.Length);
                         Console.WriteLine(Read(tcp3));
                     }
                 }
