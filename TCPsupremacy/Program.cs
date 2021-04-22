@@ -46,8 +46,8 @@ namespace TCPsupremacy
             Thread sender = new Thread(new ThreadStart(Sender));
             sender.Start();
 
-            while (true)
-            {
+            //while (true)
+            //{
                 try
                 {
                     TcpClient tcp = new TcpClient();
@@ -64,6 +64,7 @@ namespace TCPsupremacy
                         int port = Convert.ToInt32(Read(tcp2));
                         TcpClient tcp3 = new TcpClient();
                         tcp3.Connect(peerIP, port + 1);
+                        tcp3.ReceiveTimeout = 1;
                         clients.Add(tcp3);
                         Thread receiver = new Thread(() => Receive(tcp3));
                         receiver.Start();
@@ -71,7 +72,7 @@ namespace TCPsupremacy
                     }
                 }
                 catch { }
-            }
+            //}
         }
 
         static void Send(TcpClient client, string msg)
