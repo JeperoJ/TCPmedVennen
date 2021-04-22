@@ -29,7 +29,7 @@ namespace TCPsupremacy
                 serverIP = "127.0.0.1";
             }
 
-            Console.Write("Room Name: ");
+            /*Console.Write("Room Name: ");
             string rum = Console.ReadLine();
             Console.Write("Room Password: ");
             string pass = Console.ReadLine();
@@ -37,7 +37,7 @@ namespace TCPsupremacy
             user = Console.ReadLine();
 
             //Skab forbindelse til serveren, skriv rum og pass til serveren.
-            /*TcpClient roomConnector = new TcpClient();
+            TcpClient roomConnector = new TcpClient();
             roomConnector.Connect(serverIP, 5050);
             byte[] data = MakeHash(rum+pass);
             roomConnector.GetStream().Write(data, 0, data.Length); 
@@ -48,24 +48,29 @@ namespace TCPsupremacy
 
             while (true)
             {
-                TcpClient tcp = new TcpClient();
-                tcp.Connect(serverIP, 5050);
-                Console.WriteLine("Connected - Waiting for friends...");
+                try
+                {
+                    TcpClient tcp = new TcpClient();
+                    tcp.Connect(serverIP, 5050);
+                    Console.WriteLine("Connected - Waiting for friends...");
 
-                if (Read(tcp) == "!GO") {
-                    Console.WriteLine("Friend found, establish connection");
-                    tcp.Close();
-                    TcpClient tcp2 = new TcpClient();
-                    tcp2.Connect(serverIP, 5050);
-                    string peerIP = Read(tcp2);
-                    int port = Convert.ToInt32(Read(tcp2));
-                    TcpClient tcp3 = new TcpClient();
-                    tcp3.Connect(peerIP, port+1);
-                    clients.Add(tcp3);
-                    Thread receiver = new Thread(() => Receive(tcp3));
-                    receiver.Start();
-                    Console.WriteLine("Connected to: {0}:{1]", peerIP, port+1);
+                    if (Read(tcp) == "!GO")
+                    {
+                        Console.WriteLine("Friend found, establish connection");
+                        tcp.Close();
+                        TcpClient tcp2 = new TcpClient();
+                        tcp2.Connect(serverIP, 5050+1);
+                        string peerIP = Read(tcp2);
+                        int port = Convert.ToInt32(Read(tcp2));
+                        TcpClient tcp3 = new TcpClient();
+                        tcp3.Connect(peerIP, port + 1);
+                        clients.Add(tcp3);
+                        Thread receiver = new Thread(() => Receive(tcp3));
+                        receiver.Start();
+                        Console.WriteLine("Connected to: {0}:{1}", peerIP, port + 1);
+                    }
                 }
+                catch { }
             }
         }
 
@@ -98,7 +103,7 @@ namespace TCPsupremacy
         static void Receive(TcpClient client)
         {
 
-            while (true) {
+            while (client.Connected) {
                 Console.WriteLine("{0}: {1}", client.Client.RemoteEndPoint.ToString(), Read(client));
             }
         }
