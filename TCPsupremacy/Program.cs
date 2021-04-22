@@ -7,41 +7,79 @@ using System.Net.Sockets;
 using System.Net;
 using System.Threading;
 using System.Security.Cryptography;
+using System.IO;
 
 namespace TCPsupremacy
 {
        
     class Program
     {
+        static string  MakeHash(string input)
+        {
+            //Initialiser stream
+            var memoryStream = new MemoryStream();
+            var streamWriter = new StreamWriter(memoryStream, Encoding.UTF8); //Skift encoding hvis det behøves
+            //Skriv string til streamen
+            streamWriter.Write(input);
+            streamWriter.Flush();
+            memoryStream.Position = 0;
+
+            //Lav hashet
+            string output = Encoding.UTF8.GetString(SHA256.Create().ComputeHash(memoryStream));
+            return output;
+        }
+
         private static List<TcpClient> clients = new List<TcpClient>();
         private static string user;
         static void Main(string[] args)
         {
-            Console.Write("Room Name: ");
-            string rum = Console.ReadLine();
+            Console.WriteLine("Enter IP of server, or enter 0 for Mads or 1 for loopback");
+            string serverIP = Console.ReadLine();
+            if (serverIP == "0")
+            {
+                serverIP = "176.23.96.141";
+            }
+            else if (serverIP == "1")
+            {
+                serverIP = "127.0.0.1";
+            }
+            using (SHA256 sHA256 = SHA256.Create())
+                Console.Write("Room Name: ");
+            //Lav string om til datastream
+            string rum = MakeHash(Console.ReadLine());
             Console.Write("Room Password: ");
-            string pass = Console.ReadLine();
+            string pass = MakeHash(Console.ReadLine());
             Console.Write("Username: ");
             user = Console.ReadLine();
 
+            //Skab forbindelse til serveren, skriv rum og pass til serveren.
+            TcpClient roomConnector = new TcpClient();
+            roomConnector.Connect(serverIP, 5050);
+            NetworkStream stream = roomConnector.GetStream();
+            byte[] data = Encoding.UTF8.GetBytes(rum);
+            Console.WriteLine(rum + ": " + pass);
+            stream.Write(data, 0, data.Length);
+            data = Encoding.UTF8.GetBytes(pass);
+            stream.Write(data, 0, data.Length);  
+            roomConnector.Close();
+            stream.Close();
 
-
-            while(true)
+            while (true)
             {
                 TcpClient tcp = new TcpClient();
-                tcp.Connect("176.23.96.141", 5050);
+                tcp.Connect(serverIP, 5050);
                 Console.WriteLine("Connected - Waiting for friends...");
 
                 if (Read(tcp) == "!GO") {
                     Console.WriteLine("Friend found, establish connection");
                     tcp.Close();
                     TcpClient tcp2 = new TcpClient();
-                    tcp2.Connect("176.23.96.141", 5050);
-                    string IP = Read(tcp2);
+                    tcp2.Connect(serverIP, 5050);
+                    string peerIP = Read(tcp2);
                     int port = Convert.ToInt32(Read(tcp2));
-                    Console.WriteLine("Connected to: {0}:{1]", IP, port);
+                    Console.WriteLine("Connected to: {0}:{1]", peerIP, port);
                     TcpClient tcp3 = new TcpClient();
-                    tcp3.Connect(IP, port+1);
+                    tcp3.Connect(peerIP, port+1);
                     clients.Add(tcp3);
 
                     /*while (true)
