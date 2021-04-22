@@ -14,21 +14,6 @@ namespace TCPsupremacy
        
     class Program
     {
-        static string  MakeHash(string input)
-        {
-            //Initialiser stream
-            var memoryStream = new MemoryStream();
-            var streamWriter = new StreamWriter(memoryStream, Encoding.UTF8); //Skift encoding hvis det behøves
-            //Skriv string til streamen
-            streamWriter.Write(input);
-            streamWriter.Flush();
-            memoryStream.Position = 0;
-
-            //Lav hashet
-            string output = Encoding.UTF8.GetString(SHA256.Create().ComputeHash(memoryStream));
-            return output;
-        }
-
         private static List<TcpClient> clients = new List<TcpClient>();
         private static string user;
         static void Main(string[] args)
@@ -43,26 +28,23 @@ namespace TCPsupremacy
             {
                 serverIP = "127.0.0.1";
             }
-            using (SHA256 sHA256 = SHA256.Create())
-                Console.Write("Room Name: ");
-            //Lav string om til datastream
-            string rum = MakeHash(Console.ReadLine());
+
+            Console.Write("Room Name: ");
+            string rum = Console.ReadLine();
             Console.Write("Room Password: ");
-            string pass = MakeHash(Console.ReadLine());
+            string pass = Console.ReadLine();
             Console.Write("Username: ");
             user = Console.ReadLine();
 
             //Skab forbindelse til serveren, skriv rum og pass til serveren.
-            TcpClient roomConnector = new TcpClient();
+            /*TcpClient roomConnector = new TcpClient();
             roomConnector.Connect(serverIP, 5050);
-            NetworkStream stream = roomConnector.GetStream();
-            byte[] data = Encoding.UTF8.GetBytes(rum);
-            Console.WriteLine(rum + ": " + pass);
-            stream.Write(data, 0, data.Length);
-            data = Encoding.UTF8.GetBytes(pass);
-            stream.Write(data, 0, data.Length);  
-            roomConnector.Close();
-            stream.Close();
+            byte[] data = MakeHash(rum+pass);
+            roomConnector.GetStream().Write(data, 0, data.Length); 
+            roomConnector.Close();*/
+
+            Thread sender = new Thread(new ThreadStart(Sender));
+            sender.Start();
 
             while (true)
             {
@@ -77,21 +59,34 @@ namespace TCPsupremacy
                     tcp2.Connect(serverIP, 5050);
                     string peerIP = Read(tcp2);
                     int port = Convert.ToInt32(Read(tcp2));
-                    Console.WriteLine("Connected to: {0}:{1]", peerIP, port);
                     TcpClient tcp3 = new TcpClient();
                     tcp3.Connect(peerIP, port+1);
                     clients.Add(tcp3);
-
-                    /*while (true)
-                    {
-                        Byte[] data2 = Encoding.UTF8.GetBytes(Console.ReadLine());
-                        tcp3.GetStream().Write(data2, 0, data2.Length);
-                        Console.WriteLine(Read(tcp3));
-                    }*/
+                    Thread receiver = new Thread(() => Receive(tcp3));
+                    receiver.Start();
+                    Console.WriteLine("Connected to: {0}:{1]", peerIP, port+1);
                 }
             }
         }
 
+        static void Send(TcpClient client, string msg)
+        {
+            byte[] data = Encoding.UTF8.GetBytes(msg);
+            client.GetStream().Write(data, 0, data.Length);
+        }
+
+        static void Sender()
+        {
+            while (true)
+            {
+                string msg = Console.ReadLine();
+                foreach (var client in clients)
+                {
+                    Send(client, msg);
+                }
+            }
+        }
+        
         static string Read(TcpClient tcp)
         {
             Byte[] data = new Byte[256];
@@ -100,9 +95,27 @@ namespace TCPsupremacy
             return(Encoding.UTF8.GetString(data, 0, bytes));
         }
 
-        void Receive()
+        static void Receive(TcpClient client)
         {
 
+            while (true) {
+                Console.WriteLine("{0}: {1}", client.Client.RemoteEndPoint.ToString(), Read(client));
+            }
+        }
+
+        static byte[] MakeHash(string input)
+        {
+            //Initialiser stream
+            var memoryStream = new MemoryStream();
+            var streamWriter = new StreamWriter(memoryStream, Encoding.UTF8); //Skift encoding hvis det behøves
+            //Skriv string til streamen
+            streamWriter.Write(input);
+            streamWriter.Flush();
+            memoryStream.Position = 0;
+
+            //Lav hashet
+            byte[] output = SHA256.Create().ComputeHash(memoryStream);
+            return output;
         }
     }
 }
