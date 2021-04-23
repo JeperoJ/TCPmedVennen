@@ -164,7 +164,7 @@ namespace TCPsupremacy
         {
             while (true)
             {
-                if (connections.Count != 0)
+                try
                 {
                     foreach (var kvp in connections)
                     {
@@ -177,6 +177,7 @@ namespace TCPsupremacy
                         }
                     }
                 }
+                catch { }
                 Thread.Sleep(10);
             }
         }
