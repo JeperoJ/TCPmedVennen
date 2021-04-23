@@ -73,6 +73,7 @@ namespace TCPsupremacy
                         string peerIP = Read(tcp2);
                         int port = Convert.ToInt32(Read(tcp2));
                         TcpClient tcp3 = new TcpClient();
+                        Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
                         tcp3.Connect(peerIP, port + 1);
                         tcp3.ReceiveTimeout = 1;
                         //clients.Add(tcp3);
@@ -123,7 +124,7 @@ namespace TCPsupremacy
                 try
                 {
                     bytes = client.GetStream().Read(data, 0, data.Length);
-                    Console.WriteLine("{0}: {1}", client.Client.RemoteEndPoint.ToString(), Encoding.UTF8.GetString(data, 0, bytes));
+                    Console.WriteLine("{0}: {1}", names[client], Encoding.UTF8.GetString(data, 0, bytes));
                 }
                 catch { }
             }
@@ -148,16 +149,20 @@ namespace TCPsupremacy
         {
             while (true)
             {
-                foreach (var kvp in connections)
+                if (connections.Count != 0)
                 {
-                    if (!kvp.Value.IsAlive)
+                    foreach (var kvp in connections)
                     {
-                        kvp.Value.Join();
-                        Console.WriteLine("{0} has disconnected", kvp.Key.Client.RemoteEndPoint.ToString());
-                        kvp.Key.Close();
-                        connections.Remove(kvp.Key);
+                        if (!kvp.Value.IsAlive)
+                        {
+                            kvp.Value.Join();
+                            Console.WriteLine("{0} has disconnected", kvp.Key.Client.RemoteEndPoint.ToString());
+                            kvp.Key.Close();
+                            connections.Remove(kvp.Key);
+                        }
                     }
                 }
+                Thread.Sleep(10);
             }
         }
     }
