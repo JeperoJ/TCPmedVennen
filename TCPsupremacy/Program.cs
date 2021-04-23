@@ -14,7 +14,10 @@ namespace TCPsupremacy
        
     class Program
     {
-        private static List<TcpClient> clients = new List<TcpClient>();
+        //private static List<TcpClient> clients = new List<TcpClient>();
+
+        private static Dictionary<TcpClient, Thread> connections = new Dictionary<TcpClient, Thread>();
+
         private static string user;
         static void Main(string[] args)
         {
@@ -43,6 +46,8 @@ namespace TCPsupremacy
             roomConnector.GetStream().Write(data, 0, data.Length); 
             roomConnector.Close();*/
 
+            Console.WriteLine("Connected - Waiting for friends...");
+
             Thread sender = new Thread(new ThreadStart(Sender));
             sender.Start();
 
@@ -52,7 +57,6 @@ namespace TCPsupremacy
                 {
                     TcpClient tcp = new TcpClient();
                     tcp.Connect(serverIP, 5050);
-                    Console.WriteLine("Connected - Waiting for friends...");
 
                     if (Read(tcp) == "!GO")
                     {
@@ -65,9 +69,10 @@ namespace TCPsupremacy
                         TcpClient tcp3 = new TcpClient();
                         tcp3.Connect(peerIP, port + 1);
                         tcp3.ReceiveTimeout = 1;
-                        clients.Add(tcp3);
+                        //clients.Add(tcp3);
                         Thread receiver = new Thread(() => Receive(tcp3));
                         receiver.Start();
+                        connections.Add(tcp3, receiver);
                         Console.WriteLine("Connected to: {0}:{1}", peerIP, port + 1);
                     }
                 }
@@ -86,7 +91,7 @@ namespace TCPsupremacy
             while (true)
             {
                 string msg = Console.ReadLine();
-                foreach (var client in clients)
+                foreach (var client in connections.Keys)
                 {
                     Send(client, msg);
                 }
@@ -103,9 +108,16 @@ namespace TCPsupremacy
 
         static void Receive(TcpClient client)
         {
-
             while (client.Connected) {
-                Console.WriteLine("{0}: {1}", client.Client.RemoteEndPoint.ToString(), Read(client));
+                Byte[] data = new Byte[256];
+                String responseData = String.Empty;
+                int bytes = 0;
+                try
+                {
+                    bytes = client.GetStream().Read(data, 0, data.Length);
+                }
+                catch { }
+                Console.WriteLine("{0}: {1}", client.Client.RemoteEndPoint.ToString(), Encoding.UTF8.GetString(data, 0, bytes));
             }
         }
 
@@ -122,6 +134,23 @@ namespace TCPsupremacy
             //Lav hashet
             byte[] output = SHA256.Create().ComputeHash(memoryStream);
             return output;
+        }
+
+        void ThreadKiller()
+        {
+            while (true)
+            {
+                foreach (var kvp in connections)
+                {
+                    if (!kvp.Value.IsAlive)
+                    {
+                        kvp.Value.Join();
+                        Console.WriteLine("{0} has disconnected", kvp.Key.Client.RemoteEndPoint.ToString());
+                        kvp.Key.Close();
+                        connections.Remove(kvp.Key);
+                    }
+                }
+            }
         }
     }
 }
