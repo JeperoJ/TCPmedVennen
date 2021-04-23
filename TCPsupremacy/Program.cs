@@ -75,13 +75,19 @@ namespace TCPsupremacy
                         TcpClient tcp3 = new TcpClient();
                         Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
                         tcp3.Connect(peerIP, port + 1);
+                        Console.WriteLine("Succes");
                         tcp3.ReceiveTimeout = 1;
                         //clients.Add(tcp3);
                         Send(tcp3, user);
+                        Console.WriteLine("Success username send");
                         names.Add(tcp3, Read(tcp3));
+                        Console.WriteLine("added to the dick");
                         Thread receiver = new Thread(() => Receive(tcp3));
+                        Console.WriteLine("Recieve made");
                         receiver.Start();
+                        Console.WriteLine("Recieve started");
                         connections.Add(tcp3, receiver);
+                        Console.WriteLine("Recieve added");
                         Console.WriteLine("Connected to {0}:{1} with name {2}", peerIP, port + 1, names[tcp3]);
                     }
                 }
