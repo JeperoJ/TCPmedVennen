@@ -57,6 +57,7 @@ namespace TCPsupremacy
                 {
                     TcpClient tcp = new TcpClient();
                     tcp.Connect(serverIP, 5050);
+                    Send(tcp, "Room1");
 
                     if (Read(tcp) == "!GO")
                     {
@@ -115,9 +116,9 @@ namespace TCPsupremacy
                 try
                 {
                     bytes = client.GetStream().Read(data, 0, data.Length);
+                    Console.WriteLine("{0}: {1}", client.Client.RemoteEndPoint.ToString(), Encoding.UTF8.GetString(data, 0, bytes));
                 }
                 catch { }
-                Console.WriteLine("{0}: {1}", client.Client.RemoteEndPoint.ToString(), Encoding.UTF8.GetString(data, 0, bytes));
             }
         }
 
