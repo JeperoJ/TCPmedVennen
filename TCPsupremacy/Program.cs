@@ -17,8 +17,7 @@ namespace TCPsupremacy
         //private static List<TcpClient> clients = new List<TcpClient>();
 
         private static Dictionary<TcpClient, Thread> connections = new Dictionary<TcpClient, Thread>();
-
-        private static string user;
+        private static Dictionary<TcpClient, string> names = new Dictionary<TcpClient, string>();
         static void Main(string[] args)
         {
             Console.WriteLine("Enter IP of server, or enter 0 for Mads or 1 for loopback");
@@ -32,32 +31,38 @@ namespace TCPsupremacy
                 serverIP = "127.0.0.1";
             }
 
-            /*Console.Write("Room Name: ");
+            Console.Write("Room Name: ");
             string rum = Console.ReadLine();
             Console.Write("Room Password: ");
             string pass = Console.ReadLine();
             Console.Write("Username: ");
-            user = Console.ReadLine();
+            string user = Console.ReadLine();
 
             //Skab forbindelse til serveren, skriv rum og pass til serveren.
             TcpClient roomConnector = new TcpClient();
             roomConnector.Connect(serverIP, 5050);
-            byte[] data = MakeHash(rum+pass);
-            roomConnector.GetStream().Write(data, 0, data.Length); 
-            roomConnector.Close();*/
+            /*byte[] data = MakeHash(rum+pass);
+            roomConnector.GetStream().Write(data, 0, data.Length); */
+            Send(roomConnector, rum + pass);
+            roomConnector.Close();
+
+
 
             Console.WriteLine("Connected - Waiting for friends...");
 
             Thread sender = new Thread(new ThreadStart(Sender));
             sender.Start();
+            Thread killer = new Thread(new ThreadStart(ThreadKiller));
+            killer.Start();
 
-            //while (true)
-            //{
+            while (true)
+            {
                 try
                 {
                     TcpClient tcp = new TcpClient();
                     tcp.Connect(serverIP, 5050);
-                    Send(tcp, "Room1");
+                    Send(tcp, "!RECONNECT");
+                    Send(tcp, rum+pass);
 
                     if (Read(tcp) == "!GO")
                     {
@@ -71,14 +76,16 @@ namespace TCPsupremacy
                         tcp3.Connect(peerIP, port + 1);
                         tcp3.ReceiveTimeout = 1;
                         //clients.Add(tcp3);
+                        Send(tcp3, user);
+                        names.Add(tcp3, Read(tcp3));
                         Thread receiver = new Thread(() => Receive(tcp3));
                         receiver.Start();
                         connections.Add(tcp3, receiver);
-                        Console.WriteLine("Connected to: {0}:{1}", peerIP, port + 1);
+                        Console.WriteLine("Connected to {0}:{1} with name {2}", peerIP, port + 1, names[tcp3]);
                     }
                 }
                 catch { }
-            //}
+            }
         }
 
         static void Send(TcpClient client, string msg)
@@ -137,7 +144,7 @@ namespace TCPsupremacy
             return output;
         }
 
-        void ThreadKiller()
+        static void ThreadKiller()
         {
             while (true)
             {
