@@ -41,9 +41,9 @@ namespace TCPsupremacy
             //Skab forbindelse til serveren, skriv rum og pass til serveren.
             TcpClient roomConnector = new TcpClient();
             roomConnector.Connect(serverIP, 5050);
-            /*byte[] data = MakeHash(rum+pass);
-            roomConnector.GetStream().Write(data, 0, data.Length); */
-            Send(roomConnector, rum + pass);
+            string hash = MakeHash(rum+pass);
+            Send(roomConnector, hash);
+            //Send(roomConnector, rum + pass);
             roomConnector.Close();
 
 
@@ -61,29 +61,40 @@ namespace TCPsupremacy
                 {
                     TcpClient tcp = new TcpClient();
                     tcp.Connect(serverIP, 5050);
-                    Send(tcp, "!RECONNECT");
-                    Send(tcp, rum+pass);
+                    Send(tcp, "!RECONNECT" + hash);
+                    //Send(tcp, rum + pass);
 
-                    if (Read(tcp) == "!GO")
+                    while (true)
                     {
-                        Console.WriteLine("Friend found, establish connection");
-                        tcp.Close();
-                        TcpClient tcp2 = new TcpClient();
-                        tcp2.Connect(serverIP, 5050+1);
-                        string peerIP = Read(tcp2);
-                        int port = Convert.ToInt32(Read(tcp2));
-                        TcpClient tcp3 = new TcpClient();
-                        Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
-                        tcp3.Connect(peerIP, port + 1);
-                        tcp3.ReceiveTimeout = 1;
-                        //clients.Add(tcp3);
-                        Send(tcp3, user);
-                        names.Add(tcp3, Read(tcp3));
-                        Thread receiver = new Thread(() => Receive(tcp3));
-                        receiver.Start();
-                        connections.Add(tcp3, receiver);
-                        Console.WriteLine("Connected to {0}:{1} with name {2}", peerIP, port + 1, names[tcp3]);
+                        if (Read(tcp) == "!GO")
+                        {
+                            break;
+                        }
                     }
+                    Console.WriteLine("Friend found, establish connection");
+                    tcp.Close();
+                    TcpClient tcp2 = new TcpClient();
+                    tcp2.Connect(serverIP, 5050 + 1);
+                    string peerIP = Read(tcp2);
+                    int port = Convert.ToInt32(Read(tcp2));
+                    TcpClient tcp3 = new TcpClient();
+                    Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
+                    tcp3.Connect(peerIP, port + 1);
+                    Console.WriteLine("Success");
+                    //clients.Add(tcp3);
+                    Send(tcp3, user);
+                    Console.WriteLine("Success username send");
+                    names.Add(tcp3, Read(tcp3));
+                    Console.WriteLine("Added to the dick");
+                    Thread receiver = new Thread(() => Receive(tcp3));
+                    tcp3.ReceiveTimeout = 1;
+                    Console.WriteLine("Receive made");
+                    receiver.Start();
+                    Console.WriteLine("Receive started");
+                    connections.Add(tcp3, receiver);
+                    Console.WriteLine("Connection added");
+                    Console.WriteLine("Connected to {0}:{1} with name {2}", peerIP, port + 1, names[tcp3]);
+
                 }
                 catch { }
             }
@@ -130,7 +141,7 @@ namespace TCPsupremacy
             }
         }
 
-        static byte[] MakeHash(string input)
+        static string MakeHash(string input)
         {
             //Initialiser stream
             var memoryStream = new MemoryStream();
@@ -141,7 +152,7 @@ namespace TCPsupremacy
             memoryStream.Position = 0;
 
             //Lav hashet
-            byte[] output = SHA256.Create().ComputeHash(memoryStream);
+            string output = Encoding.UTF8.GetString(SHA256.Create().ComputeHash(memoryStream));
             return output;
         }
 
