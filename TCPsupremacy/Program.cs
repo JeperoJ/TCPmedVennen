@@ -31,12 +31,13 @@ namespace TCPsupremacy
                 serverIP = "127.0.0.1";
             }
 
+            string user = "anon";
             Console.Write("Room Name: ");
             string rum = Console.ReadLine();
             Console.Write("Room Password: ");
             string pass = Console.ReadLine();
             Console.Write("Username: ");
-            string user = Console.ReadLine();
+            user = Console.ReadLine();
 
             //Skab forbindelse til serveren, skriv rum og pass til serveren.
             TcpClient roomConnector = new TcpClient();
