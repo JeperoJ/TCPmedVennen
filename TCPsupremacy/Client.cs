@@ -12,7 +12,7 @@ namespace TCPsupremacy
     class Client
     {        
         public string name { get; set; }
-        public RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+        public RSACryptoServiceProvider csp;
         public Thread receiver { get; set; }
         public TcpClient client = new TcpClient();
     }

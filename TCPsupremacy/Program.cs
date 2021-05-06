@@ -18,16 +18,17 @@ namespace TCPsupremacy
 
         /*private static Dictionary<TcpClient, Thread> connections = new Dictionary<TcpClient, Thread>();
         private static Dictionary<TcpClient, string> names = new Dictionary<TcpClient, string>();*/
-        private static RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(2048);
-        private static RSAParameters privKey = rsa.ExportParameters(true);
-        private static RSAParameters pubKey = rsa.ExportParameters(false);
+        private static RSACryptoServiceProvider rsa;
+        private static RSAParameters pubKey;
         private static List<Client> clients = new List<Client>();
         static void Main(string[] args)
         {
+            rsa = new RSACryptoServiceProvider(2048);
+            pubKey = rsa.ExportParameters(false);
             string pubKeyString;
             {
                 //we need some buffer
-                var sw = new System.IO.StringWriter();
+                var sw = new StringWriter();
                 //we need a serializer
                 var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
                 //serialize the key into the stream
@@ -35,7 +36,7 @@ namespace TCPsupremacy
                 //get the string from the stream
                 pubKeyString = sw.ToString();
             }
-            Console.WriteLine("Enter IP of server, or enter 0 for Mads or 1 for loopback");
+            Console.WriteLine("Enter IP of server, or enter 0 for Mads or 1 for loopback, or 2 for din lokale luder");
             string serverIP = Console.ReadLine();
             if (serverIP == "0")
             {
@@ -44,6 +45,10 @@ namespace TCPsupremacy
             else if (serverIP == "1")
             {
                 serverIP = "127.0.0.1";
+            }
+            else if (serverIP == "2")
+            {
+                serverIP = "10.146.75.224";
             }
 
             Console.Write("Room Name: ");
@@ -95,17 +100,20 @@ namespace TCPsupremacy
                     string peerIP = Read(tcp2);
                     int port = Convert.ToInt32(Read(tcp2));
                     Client client = new Client();
-                    //Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
+                    Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
                     client.client.Connect(peerIP, port + 1);
+                    Console.WriteLine("Penis");
+                    client.csp = new RSACryptoServiceProvider();
                     Send(client.client, pubKeyString);
                     {
                         //get a stream from the string
-                        var sr = new System.IO.StringReader(Read(client.client));
+                        var sr = new StringReader(Read(client.client));
                         //we need a deserializer
                         var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
                         //get the object back from the stream
-                        client.rsa.ImportParameters((RSAParameters)xs.Deserialize(sr));
+                        client.csp.ImportParameters((RSAParameters)xs.Deserialize(sr));
                     }
+                    Console.WriteLine("Større penis");
 
 
                     eSend(client, user);
@@ -137,7 +145,7 @@ namespace TCPsupremacy
         static void eSend(Client client, string msg)
         {
             byte[] data = Encoding.UTF8.GetBytes(msg);
-            byte[] dataCypherText = client.rsa.Encrypt(data, true);
+            byte[] dataCypherText = client.csp.Encrypt(data, true);
             client.client.GetStream().Write(dataCypherText, 0, dataCypherText.Length);
         }
         static string eRead(Client tcp)
@@ -145,7 +153,8 @@ namespace TCPsupremacy
             Byte[] data = new Byte[256];
             String responseData = String.Empty;
             int bytes = tcp.client.GetStream().Read(data, 0, data.Length);
-            return (Encoding.UTF8.GetString(data, 0, bytes));
+            byte[] msg = rsa.Decrypt(data, true);
+            return (Encoding.UTF8.GetString(msg));
         }
         static void Sender()
         {
@@ -168,7 +177,8 @@ namespace TCPsupremacy
                 try
                 {
                     bytes = client.client.GetStream().Read(data, 0, data.Length);
-                    Console.WriteLine("{0}: {1}", client.name, Encoding.UTF8.GetString(data, 0, bytes));
+                    byte[] msg = rsa.Decrypt(data, true);
+                    Console.WriteLine("{0}: {1}", client.name, Encoding.UTF8.GetString(msg));
                 }
                 catch { }
             }
