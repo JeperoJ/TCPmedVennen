@@ -122,6 +122,11 @@ namespace TCPsupremacy
                     client.csp.ImportParameters(newKey);
                     Console.WriteLine("Større penis");
 
+                    TcpClient tcp3 = new TcpClient();
+                    tcp3.Connect(serverIP, 5050);
+                    Send(tcp3, "!COMPLETED");
+                    tcp2.Close();
+                    tcp3.Close();
 
                     eSend(client, user);
                     client.name = eRead(client);
@@ -133,7 +138,14 @@ namespace TCPsupremacy
                     Console.WriteLine("Connected to {0}:{1} with name {2}", peerIP, port + 1, client.name);
                     //Console.WriteLine("Connected to {0}", client.name);
                 }
-                catch { }
+                catch 
+                {
+                    Console.WriteLine("Holepunch virker ikke");
+                    TcpClient tcp = new TcpClient();
+                    tcp.Connect(serverIP, 5050);
+                    Send(tcp, "!FAILED");
+                    
+                }
             }
         }
 
