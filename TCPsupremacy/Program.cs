@@ -101,7 +101,8 @@ namespace TCPsupremacy
                     int port = Convert.ToInt32(Read(tcp2));
                     Client client = new Client();
                     Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
-                    client.client.Connect(peerIP, port + 1);
+                    client.client.ConnectAsync(peerIP, port + 1).Wait(2000);
+                    //client.client.Connect(peerIP, port + 1);
                     Console.WriteLine("Penis");
                     client.csp = new RSACryptoServiceProvider();
                     Send(client.client, pubKeyString);
