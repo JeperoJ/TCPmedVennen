@@ -105,19 +105,26 @@ namespace TCPsupremacy
                     Console.WriteLine("Penis");
                     client.csp = new RSACryptoServiceProvider();
                     Send(client.client, pubKeyString);
+                    Console.WriteLine("lille håb");
+                    RSAParameters newKey;
+                    string newKeyString = Read(client.client);
+                    Console.WriteLine(newKeyString);
                     {
                         //get a stream from the string
-                        var sr = new StringReader(Read(client.client));
+                        var sr = new StringReader(newKeyString);
+                        Console.WriteLine("hhm");
                         //we need a deserializer
                         var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
                         //get the object back from the stream
-                        client.csp.ImportParameters((RSAParameters)xs.Deserialize(sr));
+                        newKey = (RSAParameters)xs.Deserialize(sr);
                     }
+                    Console.WriteLine("yeet");
+                    client.csp.ImportParameters(newKey);
                     Console.WriteLine("Større penis");
 
 
                     eSend(client, user);
-                    client.name = Read(client.client);
+                    client.name = eRead(client);
                     Thread receiver = new Thread(() => Receive(client));
                     client.client.ReceiveTimeout = 1;
                     receiver.Start();
@@ -137,7 +144,7 @@ namespace TCPsupremacy
         }
         static string Read(TcpClient tcp)
         {
-            Byte[] data = new Byte[256];
+            Byte[] data = new Byte[4096];
             String responseData = String.Empty;
             int bytes = tcp.GetStream().Read(data, 0, data.Length);
             return (Encoding.UTF8.GetString(data, 0, bytes));
