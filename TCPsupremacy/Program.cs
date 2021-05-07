@@ -23,7 +23,7 @@ namespace TCPsupremacy
         private static string name;
         private static RSACryptoServiceProvider csp;
         private static Thread receiver;
-        private static TcpClient client = new TcpClient();
+        private static TcpClient client;
         static void Main(string[] args)
         {
             rsa = new RSACryptoServiceProvider(2048);
@@ -67,7 +67,7 @@ namespace TCPsupremacy
             string serverIP = "10.146.75.224";
             string rum = "hej";
             string pass = "makker";
-            string user = "penis";
+            string user = "john dillermans";
 
             /*//Skab forbindelse til serveren, skriv rum og pass til serveren.
             TcpClient roomConnector = new TcpClient();
@@ -84,65 +84,71 @@ namespace TCPsupremacy
             Thread killer = new Thread(new ThreadStart(ThreadKiller));
             killer.Start();
 
+            while(true) { 
             bool yeet = true;
-            while (yeet)
-            {
-                try
+                while (yeet)
                 {
-                    Console.WriteLine("Fed");
-                    TcpClient tcp = new TcpClient();
-                    tcp.Connect(serverIP, 5050);
-                    Send(tcp, hash);
-
-                    while (true)
+                    client = new TcpClient();
+                    try
                     {
-                        if (Read(tcp) == "!GO")
+                        Console.WriteLine("Fed");
+                        TcpClient tcp = new TcpClient();
+                        tcp.Connect(serverIP, 5050);
+                        Send(tcp, hash);
+
+                        while (true)
                         {
-                            break;
+                            if (Read(tcp) == "!GO")
+                            {
+                                break;
+                            }
                         }
+                        Console.WriteLine("Friend found, establish connection");
+                        tcp.Close();
+                        TcpClient tcp2 = new TcpClient();
+                        tcp2.Connect(serverIP, 5050 + 1);
+                        string peerIP = Read(tcp2);
+                        int port = Convert.ToInt32(Read(tcp2));
+                        Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
+                        client.ConnectAsync(peerIP, port + 1).Wait(2000);
+                        Console.WriteLine("Penis");
+                        csp = new RSACryptoServiceProvider();
+                        Send(client, pubKeyString);
+                        Console.WriteLine("lille håb");
+                        RSAParameters newKey;
+                        string newKeyString = Read(client);
+                        Console.WriteLine(newKeyString);
+                        {
+                            //get a stream from the string
+                            var sr = new StringReader(newKeyString);
+                            Console.WriteLine("hhm");
+                            //we need a deserializer
+                            var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
+                            //get the object back from the stream
+                            newKey = (RSAParameters)xs.Deserialize(sr);
+                        }
+                        Console.WriteLine("yeet");
+                        csp.ImportParameters(newKey);
+                        Console.WriteLine("Større penis");
+
+                        tcp2.Close();
+
+                        eSend(client, user);
+                        name = eRead(client);
+                        receiver = new Thread(new ThreadStart(Receive));
+                        client.ReceiveTimeout = 1;
+                        receiver.Start();
+                        Console.WriteLine("Connected to {0}:{1} with name {2}", peerIP, port + 1, name);
+                        yeet = false;
                     }
-                    Console.WriteLine("Friend found, establish connection");
-                    tcp.Close();
-                    TcpClient tcp2 = new TcpClient();
-                    tcp2.Connect(serverIP, 5050 + 1);
-                    string peerIP = Read(tcp2);
-                    int port = Convert.ToInt32(Read(tcp2));
-                    Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
-                    client.ConnectAsync(peerIP, port + 1).Wait(2000);
-                    Console.WriteLine("Penis");
-                    csp = new RSACryptoServiceProvider();
-                    Send(client, pubKeyString);
-                    Console.WriteLine("lille håb");
-                    RSAParameters newKey;
-                    string newKeyString = Read(client);
-                    Console.WriteLine(newKeyString);
+                    catch
                     {
-                        //get a stream from the string
-                        var sr = new StringReader(newKeyString);
-                        Console.WriteLine("hhm");
-                        //we need a deserializer
-                        var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
-                        //get the object back from the stream
-                        newKey = (RSAParameters)xs.Deserialize(sr);
+                        Console.WriteLine("Holepunch virker ikke");
+                        yeet = true;
+                        Thread.Sleep(10);
                     }
-                    Console.WriteLine("yeet");
-                    csp.ImportParameters(newKey);
-                    Console.WriteLine("Større penis");
-
-                    tcp2.Close();
-
-                    eSend(client, user);
-                    name = eRead(client);
-                    receiver = new Thread(new ThreadStart(Receive));
-                    client.ReceiveTimeout = 1;
-                    receiver.Start();
-                    Console.WriteLine("Connected to {0}:{1} with name {2}", peerIP, port + 1, name);
-                    yeet = false;
-                }
-                catch 
-                {
-                    Console.WriteLine("Holepunch virker ikke");
-                    yeet = true;
+                    client.Close();
+                    Thread.Sleep(500);
                 }
             }
         }
