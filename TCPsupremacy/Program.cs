@@ -39,7 +39,7 @@ namespace TCPsupremacy
                 //get the string from the stream
                 pubKeyString = sw.ToString();
             }
-            Console.WriteLine("Enter IP of server, or enter 0 for Mads or 1 for loopback, or for din lokale luder");
+            /*Console.WriteLine("Enter IP of server, or enter 0 for Mads or 1 for loopback, or for din lokale luder");
             string serverIP = Console.ReadLine();
             if (serverIP == "0")
             {
@@ -63,7 +63,11 @@ namespace TCPsupremacy
             if (user == "")
             {
                 user = "anon";
-            }
+            }*/
+            string serverIP = "10.146.75.224";
+            string rum = "hej";
+            string pass = "makker";
+            string user = "penis";
 
             /*//Skab forbindelse til serveren, skriv rum og pass til serveren.
             TcpClient roomConnector = new TcpClient();
