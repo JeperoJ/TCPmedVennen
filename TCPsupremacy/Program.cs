@@ -81,8 +81,6 @@ namespace TCPsupremacy
 
             Thread sender = new Thread(new ThreadStart(Sender));
             sender.Start();
-            Thread killer = new Thread(new ThreadStart(ThreadKiller));
-            killer.Start();
 
             while(true) { 
             bool yeet = true;
@@ -110,7 +108,7 @@ namespace TCPsupremacy
                         string peerIP = Read(tcp2);
                         int port = Convert.ToInt32(Read(tcp2));
                         Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
-                        client.ConnectAsync(peerIP, port + 1).Wait(2000);
+                        client.ConnectAsync(peerIP, port + 1).Wait(10000);
                         Console.WriteLine("Penis");
                         csp = new RSACryptoServiceProvider();
                         Send(client, pubKeyString);
@@ -131,25 +129,26 @@ namespace TCPsupremacy
                         csp.ImportParameters(newKey);
                         Console.WriteLine("Større penis");
 
-                        tcp2.Close();
+                        //tcp2.Close();
 
                         eSend(client, user);
                         name = eRead(client);
-                        receiver = new Thread(new ThreadStart(Receive));
                         client.ReceiveTimeout = 1;
-                        receiver.Start();
                         Console.WriteLine("Connected to {0}:{1} with name {2}", peerIP, port + 1, name);
+                        receiver = new Thread(new ThreadStart(Receive));
+                        receiver.Start();
                         yeet = false;
                     }
                     catch
                     {
                         Console.WriteLine("Holepunch virker ikke");
                         yeet = true;
-                        Thread.Sleep(10);
+                        Thread.Sleep(100);
                     }
-                    client.Close();
-                    Thread.Sleep(500);
                 }
+                Thread.Sleep(5000);
+                client.Close();
+                
             }
         }
 
@@ -190,12 +189,12 @@ namespace TCPsupremacy
 
         static void Receive()
         {
-            while (client.Connected) {
+            while (true) {
+                try { 
                 Byte[] data = new Byte[256];
                 String responseData = String.Empty;
                 int bytes = 0;
-                try
-                {
+                
                     bytes = client.GetStream().Read(data, 0, data.Length);
                     byte[] msg = rsa.Decrypt(data, true);
                     Console.WriteLine("{0}: {1}", name, Encoding.UTF8.GetString(msg));
@@ -219,7 +218,7 @@ namespace TCPsupremacy
             return output;
         }
 
-        static void ThreadKiller()
+        /*static void ThreadKiller()
         {
             while (true)
             {
@@ -237,6 +236,6 @@ namespace TCPsupremacy
                 catch { }
                 Thread.Sleep(10);
             }
-        }
+        }*/
     }
 }
