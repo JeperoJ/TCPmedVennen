@@ -20,7 +20,10 @@ namespace TCPsupremacy
         private static Dictionary<TcpClient, string> names = new Dictionary<TcpClient, string>();*/
         private static RSACryptoServiceProvider rsa;
         private static RSAParameters pubKey;
-        private static List<Client> clients = new List<Client>();
+        private static string name;
+        private static RSACryptoServiceProvider csp;
+        private static Thread receiver;
+        private static TcpClient client = new TcpClient();
         static void Main(string[] args)
         {
             rsa = new RSACryptoServiceProvider(2048);
@@ -62,29 +65,30 @@ namespace TCPsupremacy
                 user = "anon";
             }
 
-            //Skab forbindelse til serveren, skriv rum og pass til serveren.
+            /*//Skab forbindelse til serveren, skriv rum og pass til serveren.
             TcpClient roomConnector = new TcpClient();
             roomConnector.Connect(serverIP, 5050);
-            string hash = MakeHash(rum+pass);
+            
             Send(roomConnector, hash);
             //Send(roomConnector, rum + pass);
-            roomConnector.Close();
+            roomConnector.Close();*/
+
+            string hash = MakeHash(rum + pass);
 
             Thread sender = new Thread(new ThreadStart(Sender));
             sender.Start();
             Thread killer = new Thread(new ThreadStart(ThreadKiller));
             killer.Start();
 
-            Console.WriteLine("Connected - Waiting for friends...");
-
-            while (true)
+            bool yeet = true;
+            while (yeet)
             {
                 try
                 {
+                    Console.WriteLine("Fed");
                     TcpClient tcp = new TcpClient();
                     tcp.Connect(serverIP, 5050);
-                    Send(tcp, "!RECONNECT" + hash);
-                    //Send(tcp, rum + pass);
+                    Send(tcp, hash);
 
                     while (true)
                     {
@@ -99,16 +103,14 @@ namespace TCPsupremacy
                     tcp2.Connect(serverIP, 5050 + 1);
                     string peerIP = Read(tcp2);
                     int port = Convert.ToInt32(Read(tcp2));
-                    Client client = new Client();
                     Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
-                    client.client.ConnectAsync(peerIP, port + 1).Wait(2000);
-                    //client.client.Connect(peerIP, port + 1);
+                    client.ConnectAsync(peerIP, port + 1).Wait(2000);
                     Console.WriteLine("Penis");
-                    client.csp = new RSACryptoServiceProvider();
-                    Send(client.client, pubKeyString);
+                    csp = new RSACryptoServiceProvider();
+                    Send(client, pubKeyString);
                     Console.WriteLine("lille håb");
                     RSAParameters newKey;
-                    string newKeyString = Read(client.client);
+                    string newKeyString = Read(client);
                     Console.WriteLine(newKeyString);
                     {
                         //get a stream from the string
@@ -120,40 +122,35 @@ namespace TCPsupremacy
                         newKey = (RSAParameters)xs.Deserialize(sr);
                     }
                     Console.WriteLine("yeet");
-                    client.csp.ImportParameters(newKey);
+                    csp.ImportParameters(newKey);
                     Console.WriteLine("Større penis");
 
                     TcpClient tcp3 = new TcpClient();
                     tcp3.Connect(serverIP, 5050);
-                    Send(tcp3, "!COMPLETED");
+                    Send(tcp3, "!COMPLETED" + hash);
                     tcp2.Close();
                     tcp3.Close();
 
                     eSend(client, user);
-                    client.name = eRead(client);
-                    Thread receiver = new Thread(() => Receive(client));
-                    client.client.ReceiveTimeout = 1;
+                    name = eRead(client);
+                    receiver = new Thread(new ThreadStart(Receive));
+                    client.ReceiveTimeout = 1;
                     receiver.Start();
-                    client.receiver = receiver;
-                    clients.Add(client);
-                    Console.WriteLine("Connected to {0}:{1} with name {2}", peerIP, port + 1, client.name);
-                    //Console.WriteLine("Connected to {0}", client.name);
+                    Console.WriteLine("Connected to {0}:{1} with name {2}", peerIP, port + 1, name);
+                    yeet = false;
                 }
                 catch 
                 {
                     Console.WriteLine("Holepunch virker ikke");
-                    TcpClient tcp = new TcpClient();
-                    tcp.Connect(serverIP, 5050);
-                    Send(tcp, "!FAILED");
-                    
+                    yeet = true;
                 }
             }
         }
 
-        static void Send(TcpClient client, string msg)
+        static void Send(TcpClient tcp, string msg)
         {
             byte[] data = Encoding.UTF8.GetBytes(msg);
-            client.GetStream().Write(data, 0, data.Length);
+            tcp.GetStream().Write(data, 0, data.Length);
         }
         static string Read(TcpClient tcp)
         {
@@ -162,17 +159,17 @@ namespace TCPsupremacy
             int bytes = tcp.GetStream().Read(data, 0, data.Length);
             return (Encoding.UTF8.GetString(data, 0, bytes));
         }
-        static void eSend(Client client, string msg)
+        static void eSend(TcpClient tcp, string msg)
         {
             byte[] data = Encoding.UTF8.GetBytes(msg);
-            byte[] dataCypherText = client.csp.Encrypt(data, true);
-            client.client.GetStream().Write(dataCypherText, 0, dataCypherText.Length);
+            byte[] dataCypherText = csp.Encrypt(data, true);
+            tcp.GetStream().Write(dataCypherText, 0, dataCypherText.Length);
         }
-        static string eRead(Client tcp)
+        static string eRead(TcpClient tcp)
         {
             Byte[] data = new Byte[256];
             String responseData = String.Empty;
-            int bytes = tcp.client.GetStream().Read(data, 0, data.Length);
+            int bytes = tcp.GetStream().Read(data, 0, data.Length);
             byte[] msg = rsa.Decrypt(data, true);
             return (Encoding.UTF8.GetString(msg));
         }
@@ -181,24 +178,21 @@ namespace TCPsupremacy
             while (true)
             {
                 string msg = Console.ReadLine();
-                foreach (var client in clients)
-                {
-                    eSend(client, msg);
-                }
+                eSend(client, msg);
             }
         }
 
-        static void Receive(Client client)
+        static void Receive()
         {
-            while (client.client.Connected) {
+            while (client.Connected) {
                 Byte[] data = new Byte[256];
                 String responseData = String.Empty;
                 int bytes = 0;
                 try
                 {
-                    bytes = client.client.GetStream().Read(data, 0, data.Length);
+                    bytes = client.GetStream().Read(data, 0, data.Length);
                     byte[] msg = rsa.Decrypt(data, true);
-                    Console.WriteLine("{0}: {1}", client.name, Encoding.UTF8.GetString(msg));
+                    Console.WriteLine("{0}: {1}", name, Encoding.UTF8.GetString(msg));
                 }
                 catch { }
             }
@@ -225,16 +219,14 @@ namespace TCPsupremacy
             {
                 try
                 {
-                    foreach (var client in clients)
-                    {
-                        if (!client.receiver.IsAlive)
+                    
+                        if (!receiver.IsAlive)
                         {
-                            client.receiver.Join();
-                            Console.WriteLine("{0} has disconnected", client.client.Client.RemoteEndPoint.ToString());
-                            client.client.Close();
-                            clients.Remove(client);
+                            receiver.Join();
+                            Console.WriteLine("{0} has disconnected", client.Client.RemoteEndPoint.ToString());
+                            client.Close();
                         }
-                    }
+                    
                 }
                 catch { }
                 Thread.Sleep(10);
