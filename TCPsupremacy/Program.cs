@@ -65,14 +65,6 @@ namespace TCPsupremacy
                 user = "anon";
             }
 
-            /*//Skab forbindelse til serveren, skriv rum og pass til serveren.
-            TcpClient roomConnector = new TcpClient();
-            roomConnector.Connect(serverIP, 5050);
-            
-            Send(roomConnector, hash);
-            //Send(roomConnector, rum + pass);
-            roomConnector.Close();*/
-
             string hash = MakeHash(rum + pass);
 
             Thread sender = new Thread(new ThreadStart(Sender));
@@ -81,67 +73,71 @@ namespace TCPsupremacy
             killer.Start();
 
             bool yeet = true;
-                while (yeet)
+            while (yeet)
+            {
+                try
                 {
-                    try
+                    Console.WriteLine("Fed");
+                    TcpClient tcp = new TcpClient();
+                    tcp.Connect(serverIP, 5050);
+                    Send(tcp, hash);
+
+                    while (true)
                     {
-                        Console.WriteLine("Fed");
-                        TcpClient tcp = new TcpClient();
-                        tcp.Connect(serverIP, 5050);
-                        Send(tcp, hash);
-
-                        while (true)
+                        if (Read(tcp) == "!GO")
                         {
-                            if (Read(tcp) == "!GO")
-                            {
-                                break;
-                            }
+                            break;
                         }
-                        Console.WriteLine("Friend found, establish connection");
-                        tcp.Close();
-                        TcpClient tcp2 = new TcpClient();
-                        tcp2.Connect(serverIP, 5050 + 1);
-                        string peerIP = Read(tcp2);
-                        int port = Convert.ToInt32(Read(tcp2));
-                        Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
-                        client.ConnectAsync(peerIP, port + 1).Wait(2000);
-                        Console.WriteLine("Penis");
-                        csp = new RSACryptoServiceProvider();
-                        Send(client, pubKeyString);
-                        Console.WriteLine("lille håb");
-                        RSAParameters newKey;
-                        string newKeyString = Read(client);
-                        Console.WriteLine(newKeyString);
-                        {
-                            //get a stream from the string
-                            var sr = new StringReader(newKeyString);
-                            Console.WriteLine("hhm");
-                            //we need a deserializer
-                            var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
-                            //get the object back from the stream
-                            newKey = (RSAParameters)xs.Deserialize(sr);
-                        }
-                        Console.WriteLine("yeet");
-                        csp.ImportParameters(newKey);
-                        Console.WriteLine("Større penis");
-
-                        //tcp2.Close();
-
-                        eSend(client, user);
-                        name = eRead(client);
-                        client.ReceiveTimeout = 1;
-                        Console.WriteLine("Connected to {0}:{1} with name {2}", peerIP, port + 1, name);
-                        receiver = new Thread(new ThreadStart(Receive));
-                        receiver.Start();
-                        yeet = false;
                     }
-                    catch
+                    Console.WriteLine("Friend found, establish connection");
+                    tcp.Close();
+                    TcpClient tcp2 = new TcpClient();
+                    tcp2.Connect(serverIP, 5050 + 1);
+                    string mesa = Read(tcp2);
+                    Console.WriteLine(mesa);
+                    string peerIP = mesa.Split(',')[0];
+                    int port = Convert.ToInt32(mesa.Split(',')[1]);
+                    Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
+                    //client.ConnectAsync(peerIP, port + 1).Wait(2000);
+                    client.Connect(peerIP, port + 1);
+                    Console.WriteLine("Penis");
+                    csp = new RSACryptoServiceProvider();
+                    Send(client, pubKeyString);
+                    Console.WriteLine("lille håb");
+                    RSAParameters newKey;
+                    string newKeyString = Read(client);
+                    Console.WriteLine(newKeyString);
                     {
-                        Console.WriteLine("Holepunch virker ikke");
-                        yeet = true;
-                        Thread.Sleep(100);
+                        //get a stream from the string
+                        var sr = new StringReader(newKeyString);
+                        Console.WriteLine("hhm");
+                        //we need a deserializer
+                        var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
+                        //get the object back from the stream
+                        newKey = (RSAParameters)xs.Deserialize(sr);
                     }
+                    Console.WriteLine("yeet");
+                    csp.ImportParameters(newKey);
+                    Console.WriteLine("Større penis");
+
+                    //tcp2.Close();
+
+                    eSend(client, user);
+                    name = eRead(client);
+                    client.ReceiveTimeout = 1;
+                    Console.WriteLine("Connected to {0}:{1} with name {2}", peerIP, port + 1, name);
+                    receiver = new Thread(new ThreadStart(Receive));
+                    receiver.Start();
+                    yeet = false;
                 }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    Console.WriteLine("Holepunch virker ikke");
+                    yeet = true;
+                    Thread.Sleep(1000);
+                }
+            }
         }
 
         static void Send(TcpClient tcp, string msg)
