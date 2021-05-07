@@ -23,7 +23,7 @@ namespace TCPsupremacy
         private static string name;
         private static RSACryptoServiceProvider csp;
         private static Thread receiver;
-        private static TcpClient client;
+        private static TcpClient client = new TcpClient();
         static void Main(string[] args)
         {
             rsa = new RSACryptoServiceProvider(2048);
@@ -39,7 +39,7 @@ namespace TCPsupremacy
                 //get the string from the stream
                 pubKeyString = sw.ToString();
             }
-            /*Console.WriteLine("Enter IP of server, or enter 0 for Mads or 1 for loopback, or for din lokale luder");
+            Console.WriteLine("Enter IP of server, or enter 0 for Mads or 1 for loopback, or 2 for din lokale luder");
             string serverIP = Console.ReadLine();
             if (serverIP == "0")
             {
@@ -49,7 +49,7 @@ namespace TCPsupremacy
             {
                 serverIP = "127.0.0.1";
             }
-            else if (serverIP == "")
+            else if (serverIP == "2")
             {
                 serverIP = "10.146.75.224";
             }
@@ -63,11 +63,7 @@ namespace TCPsupremacy
             if (user == "")
             {
                 user = "anon";
-            }*/
-            string serverIP = "10.146.75.224";
-            string rum = "hej";
-            string pass = "makker";
-            string user = "john dillermans";
+            }
 
             /*//Skab forbindelse til serveren, skriv rum og pass til serveren.
             TcpClient roomConnector = new TcpClient();
@@ -87,7 +83,6 @@ namespace TCPsupremacy
             bool yeet = true;
                 while (yeet)
                 {
-                    client = new TcpClient();
                     try
                     {
                         Console.WriteLine("Fed");
