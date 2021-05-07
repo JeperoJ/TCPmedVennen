@@ -81,8 +81,9 @@ namespace TCPsupremacy
 
             Thread sender = new Thread(new ThreadStart(Sender));
             sender.Start();
+            Thread killer = new Thread(new ThreadStart(ThreadKiller));
+            killer.Start();
 
-            while(true) { 
             bool yeet = true;
                 while (yeet)
                 {
@@ -108,7 +109,7 @@ namespace TCPsupremacy
                         string peerIP = Read(tcp2);
                         int port = Convert.ToInt32(Read(tcp2));
                         Console.WriteLine("Attempting Holepunch {0} {1}", peerIP, port);
-                        client.ConnectAsync(peerIP, port + 1).Wait(10000);
+                        client.ConnectAsync(peerIP, port + 1).Wait(2000);
                         Console.WriteLine("Penis");
                         csp = new RSACryptoServiceProvider();
                         Send(client, pubKeyString);
@@ -146,10 +147,6 @@ namespace TCPsupremacy
                         Thread.Sleep(100);
                     }
                 }
-                Thread.Sleep(5000);
-                client.Close();
-                
-            }
         }
 
         static void Send(TcpClient tcp, string msg)
@@ -218,7 +215,7 @@ namespace TCPsupremacy
             return output;
         }
 
-        /*static void ThreadKiller()
+        static void ThreadKiller()
         {
             while (true)
             {
@@ -236,6 +233,6 @@ namespace TCPsupremacy
                 catch { }
                 Thread.Sleep(10);
             }
-        }*/
+        }
     }
 }
