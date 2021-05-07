@@ -39,7 +39,7 @@ namespace TCPsupremacy
                 //get the string from the stream
                 pubKeyString = sw.ToString();
             }
-            Console.WriteLine("Enter IP of server, or enter 0 for Mads or 1 for loopback, or 2 for din lokale luder");
+            Console.WriteLine("Enter IP of server, or enter 0 for Mads or 1 for loopback, or for din lokale luder");
             string serverIP = Console.ReadLine();
             if (serverIP == "0")
             {
@@ -49,7 +49,7 @@ namespace TCPsupremacy
             {
                 serverIP = "127.0.0.1";
             }
-            else if (serverIP == "2")
+            else if (serverIP == "")
             {
                 serverIP = "10.146.75.224";
             }
@@ -125,11 +125,7 @@ namespace TCPsupremacy
                     csp.ImportParameters(newKey);
                     Console.WriteLine("Større penis");
 
-                    TcpClient tcp3 = new TcpClient();
-                    tcp3.Connect(serverIP, 5050);
-                    Send(tcp3, "!COMPLETED" + hash);
                     tcp2.Close();
-                    tcp3.Close();
 
                     eSend(client, user);
                     name = eRead(client);
